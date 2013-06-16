@@ -8,7 +8,7 @@
 %
 %  optional parameter for different templates
 %   translation -> 文献翻译
-%   openning    -> 开题报告
+%   opening     -> 开题报告
 %   no-params   -> 正式论文
 %
 
@@ -16,12 +16,17 @@
 %
 %  Global var definition: \thesis@<var-name>, \thesis@type forexample
 %  
-\newif\iftranslation\translationfalse
-\newif\ifopenning\openningfalse
-\newcommand\thesistype[1]{\def\thesis@type{#1}}
-\def\thesis@type{}
-\iftranslation \thesistype{（文献翻译）} \fi
-\ifopenning \thesistype{（开题报告）} \fi
+
+%% declear a class option for this template,
+%  so that you can use it with options such as:
+%  \documentclass[opening]{ecustthesis}
+%
+\newif\iftranslation
+\newif\ifopening\openingfalse
+
+\DeclareOption{translation}{\translationtrue}
+\DeclareOption{opening}{\openingtrue}
+
 
 %% ---- author meta data ----
 \newcommand\class[1]{\def\author@class{#1}}
@@ -32,23 +37,24 @@
 \newcommand\yearenrolled[1]{\def\author@yearenrolled{#1}}
 \newcommand\mentor[1]{\def\author@mentor{#1}}
 
-
-%% !==== NEED COMMENTS ====!
-\DeclareOption{translation}{\translationtrue}
-\DeclareOption{openning}{\openningtrue}
+\ifopening
+\def\thesistype{（开题报告）}
+\else
+\def\thesistype{}
+\fi
 
 \ProcessOptions\relax
 
-%% ---- require packages ----
 \RequirePackage{geometry}
 \RequirePackage{fancyhdr}
 \RequirePackage{chngcntr}
 \RequirePackage{enumitem}
 \RequirePackage{graphicx}
-\RequirePackage[nooneline,center]{caption2}
+\RequirePackage[nooneline,center]{caption}
+\RequirePackage{subcaption}
 \RequirePackage{multirow}
 \RequirePackage{titling}
-\RequirePackage[numbers]{natbib}
+\RequirePackage[numbers, super, square, compress]{natbib}
 \RequirePackage{ifthen}
 \RequirePackage{verbatim}
 \RequirePackage{amsmath}
@@ -56,9 +62,10 @@
 \RequirePackage{titlesec}
 \RequirePackage{titletoc}
 \RequirePackage[pdfborder=001]{hyperref}
+\RequirePackage{enumitem}
 
 %  add support for bibtex and specific reference style
-\bibliographystyle{GBT7714-2005NLang-UTF8}
+% \bibliographystyle{GBT7714-2005NLang-UTF8}
 
 
 %% ==== GLOBAL STYLES ====
@@ -71,13 +78,21 @@
 
 %  thesis page style
 \fancypagestyle{ecustthesis}{
-  \fancyhead[L]{\zihao{5}{\@title \thesis@type }}
-  \fancyhead[R]{\thepage}
+  \fancyhead[L]{\zihao{5}{\@title \thesistype }}
+  \fancyhead[R]{\zihao{-5}\thepage}
   \fancyfoot[C]{}
 }
-\pagestyle{empty}
 
-
+\ifopening
+\pagestyle{ecustthesis}
+\pagenumbering{arabic}
+\else \iftranslation
+\pagestyle{ecustthesis}
+\pagenumbering{arabic}
+\else
+\pagestyle{plain}
+\renewcommand\thepage{\zihao{5}{\Roman{page}}}
+\fi \fi
 
 %% ---- caption for Fig, Tab and Equations ----
 %  figure   - 图 (3-2) 
@@ -87,22 +102,22 @@
 \makeatletter
 \@addtoreset{figure}{section}
 \renewcommand{\thefigure}{
-  \ifnum \c@section>\z@ \thesection - \fi\@arabic\c@figure}
+  \ifnum \c@section>\z@ \thesection -\fi\@arabic\c@figure}
 
 \@addtoreset{table}{section}
 \renewcommand{\thetable}{
-  \ifnum \c@section>\z@ \thesection . \fi\@arabic\c@table}
+  \ifnum \c@section>\z@ \thesection .\fi\@arabic\c@table}
 
 \@addtoreset{equation}{section}
 \renewcommand{\theequation}{
-  \ifnum \c@section>\z@ \thesection - \fi\@arabic\c@equation}
+  \ifnum \c@section>\z@ \thesection -\fi\@arabic\c@equation}
+
 
 %% ==== citation styles ====
 % uper-scrinpt citations
 
 
 %  figure and table delimination
-\renewcommand{\captionlabeldelim}{~}
 \renewcommand{\captionfont}{\bf\zihao{-5}}
 \captionsetup{labelsep=quad}
 
@@ -127,6 +142,7 @@
 \titlecontents{subsection}[0pt]{\vspace*{0pt}}
               {\heiti \thecontentslabel~~}{}
               {\titlerule*[4pt]{.}\thecontentspage}
+\setcounter{tocdepth}{2}              
 
 %  ---- Titile -----
 \pretitle{\centering\vskip -50bp\zihao{-2}\heiti}
@@ -138,48 +154,10 @@
 
 \renewcommand\maketitle{
    \maketitlehooka
-    {\@bspretitle \@title \@bsposttitle}
+    {\@bspretitle \LARGE \@title \@bsposttitle}
     \maketitlehookb
     {\@bspreauthor \@author \@bspostauthor}
     \maketitlehookc
-}
-
-%% ---- Cover ----
-%
-\newcommand{\coveritem}[2]{
-  \makebox[2.5cm]{{\bf\zihao{-2}#1}}\quad\underline{\makebox[7cm]{\zihao{-2}\kaishu #2}}
-}
-\newcommand{\makecover}{
-  \begin{titlepage}
-    
-    \begin{picture}(0,0)(-75,94)
-      \includegraphics[width=0.56\textwidth]{img/ecust_logo.png}
-    \end{picture}
-
-    \vspace*{120pt}
-
-    \begin{center}
-      {\zihao{0} \heiti \bf 毕业设计（论文）}
-    \end{center}
-    \vspace{60pt}
-    
-    \renewcommand{\arraystretch}{1.65}
-    \centerline{
-      \begin{tabular}{c}
-	\coveritem{题\quad\quad目}{\@title}\\
-	\coveritem{学\quad\quad院}{\author@college}\\
-	\coveritem{系\quad\quad别}{\author@department}\\
-	\coveritem{专\quad\quad业}{\author@major}\\
-	\coveritem{年\quad\quad级}{\author@yearenrolled}\\
-	\coveritem{学\quad\quad号}{\author@studentnumber}\\
-	\coveritem{姓\quad\quad名}{\author}\\
-	\coveritem{导\quad\quad师}{\author@mentor}
-      \end{tabular}}
-
-      \vspace{3.2cm}
-
-      \centerline{\makebox[2.5cm]{\bf\zihao{-2}定稿日期：}\makebox[7cm]{\zihao{-2} \@date}}
-    \end{titlepage}
 }
 
 
@@ -188,10 +166,16 @@
 %  def keywords command
 %  \keywords{<LANGUAGE>}{<KEYWORDS>}
 \newcommand\keywords[2]{
-  \ifthenelse{\equal{#1}{chinese}}{
-    \newcommand\chinesekeywords{#2}}{
-    \newcommand\englishkeywords{#2}}
+  \ifthenelse{\equal{#1}{english}}{
+    \def\englishkeywords{#2}}
+{
+    \def\chinesekeywords{#2}} 
 }
+
+\ifopening 
+  \renewcommand\keywords[1]{
+    \def\thekeywords{#1} }
+\fi
 
 %% ---- Abstract and Keywords style ----
 %
@@ -202,12 +186,13 @@
 %  以及摘要正文的字体大小均为小四号（默认大小）。
 \renewenvironment{abstract}[1][0]{
   \ifthenelse{\equal{#1}{chinese}}{
-    \newcommand\theabstract{{\zihao{2}\heiti 摘要}}
-    \newcommand\thekeywords{{\heiti 关键词 }}
-    \newcommand\thesis@keywords{\chinesekeywords}}{
-    \newcommand\theabstract{{\Large\bf Abstract}}
-    \newcommand\thekeywords{{\bf Keywords} }
-    \newcommand\thesis@keywords{\englishkeywords}}
+    \def\theabstract{{\zihao{2}\heiti 摘要}}
+    \def\thekeywords{{\heiti 关键词：}}
+    \def\thesis@keywords{\chinesekeywords}}
+{
+    \def\theabstract{{\Large\bf Abstract}}
+    \def\thekeywords{{\bf Keywords:} }
+    \def\thesis@keywords{\englishkeywords }}
   \clearpage
   \vspace*{90pt}
   {\center \theabstract\\}\vspace{12pt}}{
@@ -217,11 +202,12 @@
   \vspace{1.2em}
 }
 
-%  style for translation and openning
-\ifopenning
+%  style for translation and opening
+\ifopening
 \renewenvironment{abstract}{
-  \noindent {\heiti 摘要：}}{\vspace{0.2em} \\
-  \noindent {\heiti 关键词：}\chinesekeywords \vspace{1.2em}
+  \noindent {\heiti 摘要：}}{
+  \vspace{0.2em} \\
+  \noindent {\heiti 关键词：}\thekeywords \vspace{1.2em}
 } \fi
 
 %% ---- Sections ----
@@ -234,57 +220,29 @@
   \pagenumbering{arabic}
   \fi }
 
-\ifopenning \renewcommand\sectionbreak{} \fi
+\ifopening \renewcommand\sectionbreak{} \fi
 \CTEXsetup[format={\centering\zihao{-2}\heiti},beforeskip={12bp},afterskip={18bp}]{section}
 \CTEXsetup[format={\zihao{4}\songti},beforeskip={18bp},afterskip={18bp}]{subsection}
 \CTEXsetup[format={\zihao{-4}}\heiti,beforeskip={18bp},afterskip={18bp}]{subsubsection}
 \setcounter{secnumdepth}{4}
 
 
+%% ---- enumrate and itemize ---- %
+\renewcommand{\theenumi}{(\arabic{enumi})}
+\setitemize[1]{itemsep=1.2ex}
+
 %% ---- Refereces ----
+\newcommand\addreftoc{
+  \clearpage
+\addcontentsline{toc}{section}{\bf\zihao{4} 参考文献}
+}
 
 
 %% ---- Acknowledge ----
 %  add acknowledge at last
-\newcommand\acknowledge{\section*{致谢}}
+\newcommand\acknowledge{
+\section*{致谢}
+\addcontentsline{toc}{section}{\bf\zihao{4} 致谢}}
 
 %  section numbering
 % \counterwithout{section}{chapter}
-
-
-
-
-%% ==== DEPRECATED ====
-%
-%  标题 NOTE WILL BE DEPRECATED
-\newcommand{\ECUSTtitle}[1]{\def\ECUST@title{#1}}
-
-\newcommand{\ECUSTabstract}{\noindent\heiti摘要\songti：}
-\newcommand{\ECUSTkeywords}{\noindent\heiti关键词\songti：}
-
-%  插入浮动表格
-\newcommand{\ECUSTtable}[3]{
-  \begin{table}[hbtp]
-    \caption{#1}
-    \centerline{#2}
-    \label{#3}
-  \end{table}
-}
-
-%  插入浮动图片
-\newcommand\ECUSTfigure[4][]{
-  \begin{figure}[hbtp]
-    \centerline{\includegraphics[#1]{#2}}
-    \caption{#3}
-    \label{#4}
-  \end{figure}
-}
-%% 页眉格式：
-%    - 左上角是课题名，右上角是页码；页眉有下划线。
-%% 页脚格式：
-%    - 没有页脚
-%\pagestyle{fancy}
-%\fancyhead{}
-%\fancyfoot{}
-%\lhead{\zihao{5}\ECUST@title\ECUST@type}
-%\rhead{\thepage}
